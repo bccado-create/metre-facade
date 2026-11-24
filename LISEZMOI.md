@@ -5,8 +5,10 @@ Appli web installable (PWA) pour tablette Android : relevé des façades et pign
 ## Déroulé sur le chantier
 1. **Nouveau chantier** → client, adresse, gamme, couleur.
 2. **Ajouter la face** → prendre la photo bien en face.
-3. **Redresser** : toucher les 4 coins d'un rectangle connu (la façade ou une fenêtre) et saisir sa largeur et sa hauteur. La photo est remise d'équerre et mise à l'échelle : toutes les cotes sont calculées (≈).
-4. **Contour** (si la face n'est pas un rectangle : pignon, décroché), **Ouverture** (glisser d'un coin à l'autre), **Accessoire** (palette avec les pictos du devis).
+3. **Étalonner** : mesurez **une ouverture** (largeur × hauteur du tableau), touchez ses 4 coins sur la photo (glissez le doigt pour viser avec la loupe) et tapez ses deux cotes. La photo est remise d'équerre et mise à l'échelle : la façade et toutes les autres ouvertures se calculent (≈).
+   - Prenez la **plus grande** ouverture (porte de garage, baie) : plus elle est grande, plus le calcul est juste.
+   - Ajoutez **une cote de contrôle** au laser (la largeur totale de la façade) : l'appli recale tout le plan dessus.
+4. **Contour** (touchez chaque angle du mur, pointe du pignon comprise), **Ouverture** (glisser d'un coin à l'autre), **Accessoire** (palette avec les pictos du devis).
 5. **Détecter (IA)** : propose les ouvertures et accessoires en orange (clé API dans Réglages, réseau nécessaire). Touchez pour corriger, puis « Tout valider ».
 6. **Cotes** : touchez une cote sur le plan, puis tirez au laser ou tapez la valeur. L'appli passe seule à la cote suivante. Chaque cote relevée recale l'échelle.
 7. **Rapport PDF** (récap Uniso + une page par face) et **Partager / sauvegarder** (fichier .json du chantier, photos comprises, à réimporter sur une autre tablette).

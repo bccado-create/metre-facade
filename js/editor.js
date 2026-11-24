@@ -64,9 +64,9 @@ export class Editeur {
   #evenements() {
     const cv = this.cv;
     cv.addEventListener('pointerdown', e => {
-      cv.setPointerCapture(e.pointerId);
+      try { cv.setPointerCapture(e.pointerId); } catch {}
       this.ptrs.set(e.pointerId, this.#pos(e));
-      if (this.ptrs.size === 2) { this.geste = { type: 'pinch', ...this.#pinch() }; return; }
+      if (this.ptrs.size === 2) { this.geste = { type: 'pinch', ...this.#pinch() }; this.loupe = null; return; }
       this.#debut(this.#pos(e));
     });
     cv.addEventListener('pointermove', e => {
@@ -110,6 +110,10 @@ export class Editeur {
     const ip = this.versImage(p.x, p.y);
     this.geste = { type: 'tap', p0: p, ip0: ip, vue: { ...this.vue }, bouge: false };
     if (this.outil === 'ouverture') { this.geste.type = 'rect'; return; }
+    if (['contour', 'cote', 'redresser'].includes(this.outil)) {
+      // viser : la loupe suit le doigt, le point est posé au lâcher
+      this.geste.type = 'vise'; this.loupe = { p, ip }; this.dessiner(); return;
+    }
     if (this.outil !== 'select') return;
     // poignée de redimensionnement de l'ouverture sélectionnée
     if (this.sel?.kind === 'ouv') {
@@ -134,6 +138,7 @@ export class Editeur {
     if (!g.bouge) return;
     const ip = this.versImage(p.x, p.y);
     const s = this.vue.s;
+    if (g.type === 'vise') { this.loupe = { p, ip }; this.dessiner(); return; }
     if (g.type === 'pan' || (g.type === 'tap' && this.outil !== 'select')) {
       g.type = 'pan';
       this.vue = { ...g.vue, tx: g.vue.tx + dx, ty: g.vue.ty + dy };
@@ -169,7 +174,8 @@ export class Editeur {
       return this.#change();
     }
     if (['drag', 'drag-pt', 'resize'].includes(g.type) && g.bouge) return this.#change();
-    if (g.bouge) return; // pan
+    if (g.type === 'vise') this.loupe = null;
+    else if (g.bouge) return; // pan
     // --- simple tap ---
     if (this.outil === 'select') {
       const c = this.#cibleCote(p);
@@ -367,6 +373,31 @@ export class Editeur {
         this.temp.forEach((p, i) => { const e = E(p); ctx.fillStyle = i === 0 ? C.sel : '#fff'; ctx.strokeStyle = C.sel; ctx.beginPath(); ctx.arc(e.x, e.y, i === 0 ? 10 : 7, 0, 7); ctx.fill(); ctx.stroke(); });
       }
     }
+    if (!ctxExt && this.loupe) this.#dessinerLoupe(ctx, W, H);
+  }
+
+  /** Loupe ×4 au-dessus du doigt, avec réticule, pour poser les coins au centimètre. */
+  #dessinerLoupe(ctx, W, H) {
+    const { p, ip } = this.loupe;
+    const R = 75, z = Math.max(this.vue.s * 4, 0.6);
+    let cx = p.x, cy = p.y - 120;
+    if (cy < R + 6) cy = p.y + 120;
+    cx = Math.min(Math.max(cx, R + 6), W - R - 6);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.closePath();
+    ctx.fillStyle = '#fff'; ctx.fill(); ctx.clip();
+    if (!this.modePlan) ctx.drawImage(this.img, cx - ip.x * z, cy - ip.y * z, this.face.imgW * z, this.face.imgH * z);
+    // points déjà posés
+    ctx.strokeStyle = C.sel; ctx.lineWidth = 2;
+    for (const q of [...this.temp, ...this.face.contour]) {
+      const x = cx + (q.x - ip.x) * z, y = cy + (q.y - ip.y) * z;
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, 7); ctx.stroke();
+    }
+    ctx.strokeStyle = C.sel; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - R, cy); ctx.lineTo(cx - 6, cy); ctx.moveTo(cx + 6, cy); ctx.lineTo(cx + R, cy);
+    ctx.moveTo(cx, cy - R); ctx.lineTo(cx, cy - 6); ctx.moveTo(cx, cy + 6); ctx.lineTo(cx, cy + R); ctx.stroke();
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.strokeStyle = '#22303a'; ctx.stroke();
   }
 
   #grille(ctx, vue, W, H) {

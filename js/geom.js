@@ -53,18 +53,23 @@ export function ordonner4(pts) {
  * Redresse l'image : les 4 coins cliqués (rectangle réel largeur × hauteur en m) deviennent un rectangle exact.
  * Retourne { canvas, echelle (px/m), H (image redressée -> image source) }.
  */
-export function redresser(img, coins, largeur, hauteur, maxCote = 2400) {
+export function redresser(img, coins, largeur, hauteur, maxCote = 3000) {
   const [hg, hd, bd, bg] = ordonner4(coins);
   const unit = [{ x: 0, y: 0 }, { x: largeur, y: 0 }, { x: largeur, y: hauteur }, { x: 0, y: hauteur }];
   const versMetres = homographie([hg, hd, bd, bg], unit);
   // emprise de toute la photo dans le repère en mètres
   const W = img.naturalWidth || img.width, Hh = img.naturalHeight || img.height;
   const coinsPhoto = [{ x: 0, y: 0 }, { x: W, y: 0 }, { x: W, y: Hh }, { x: 0, y: Hh }].map(p => appliquer(versMetres, p.x, p.y));
+  // Toute la photo est conservée (la référence peut être une petite fenêtre),
+  // dans la limite de 30 m de part et d'autre (au-delà : ciel, horizon).
   const lim = (v, a, b) => Math.min(Math.max(v, a), b);
-  const x0 = lim(Math.min(...coinsPhoto.map(p => p.x)), -largeur * 1.5, 0);
-  const x1 = lim(Math.max(...coinsPhoto.map(p => p.x)), largeur, largeur * 2.5);
-  const y0 = lim(Math.min(...coinsPhoto.map(p => p.y)), -hauteur * 1.5, 0);
-  const y1 = lim(Math.max(...coinsPhoto.map(p => p.y)), hauteur, hauteur * 2.5);
+  const dedans = coinsPhoto.every(p => isFinite(p.x) && isFinite(p.y));
+  const xs = dedans ? coinsPhoto.map(p => p.x) : [-30, largeur + 30];
+  const ys = dedans ? coinsPhoto.map(p => p.y) : [-15, hauteur + 15];
+  const x0 = lim(Math.min(...xs), -30, 0);
+  const x1 = lim(Math.max(...xs), largeur, largeur + 30);
+  const y0 = lim(Math.min(...ys), -20, 0);
+  const y1 = lim(Math.max(...ys), hauteur, hauteur + 20);
   const echelle = Math.min(maxCote / (x1 - x0), maxCote / (y1 - y0), 250);
   const ow = Math.round((x1 - x0) * echelle), oh = Math.round((y1 - y0) * echelle);
   // inverse : pixel de sortie -> pixel source

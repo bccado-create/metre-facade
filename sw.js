@@ -1,5 +1,5 @@
 // Service worker : l'appli fonctionne hors ligne sur le chantier.
-const VERSION = 'metre-facade-v1';
+const VERSION = 'metre-facade-v2';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/app.js', 'js/db.js', 'js/catalog.js', 'js/geom.js', 'js/editor.js', 'js/ai.js', 'js/laser.js', 'js/report.js',

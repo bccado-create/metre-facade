@@ -206,14 +206,14 @@ for (const id of ['#in-photo', '#in-photo-2']) $(id).addEventListener('change', 
   attente('Chargement de la photo…');
   try {
     const bmp = await createImageBitmap(file);
-    const k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+    const k = Math.min(1, 3200 / Math.max(bmp.width, bmp.height));
     const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
     c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
     const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
     Object.assign(face, { photo: blob, imgW: c.width, imgH: c.height, redressee: false, echelle: null, contour: [], ouvertures: [], accessoires: [], cotes: [], mesures: {} });
     await enregistrer();
     await ouvrirFace(face);
-    aide('Pointez les 4 coins d’un rectangle connu (la façade ou une fenêtre) pour redresser la photo.');
+    aide('Touchez les 4 coins d’une fenêtre dont vous connaissez la largeur et la hauteur. Glissez le doigt pour viser avec la loupe.');
   } finally { attente(); }
 });
 $('#btn-sans-photo').addEventListener('click', () => {
@@ -226,8 +226,8 @@ function setOutil(o) {
   editeur.setOutil(o);
   $$('.outils [data-outil]').forEach(b => b.classList.toggle('on', b.dataset.outil === o));
   const aides = {
-    redresser: 'Touchez les 4 coins d’un rectangle réel (façade, fenêtre, porte) dans n’importe quel ordre.',
-    contour: 'Touchez chaque angle du mur. Touchez le premier point pour fermer. Deux doigts pour zoomer.',
+    redresser: 'Touchez les 4 coins d’une fenêtre (ou de la façade) dont vous connaissez les cotes. Glissez le doigt pour viser avec la loupe.',
+    contour: 'Touchez chaque angle du mur, puis le premier point pour fermer. Glissez pour viser, deux doigts pour zoomer.',
     ouverture: 'Faites glisser sur la photo, d’un coin à l’autre de l’ouverture (tableau).',
     accessoire: 'Choisissez l’accessoire à droite, puis touchez sa position sur la façade.',
     cote: 'Touchez le point de départ puis le point d’arrivée de la cote.',
@@ -246,10 +246,18 @@ $('#vue-plan').addEventListener('click', () => { editeur.modePlan = true; majBas
 
 // ---- redressement ----
 let pointsRed = null;
+let redQuoi = 'ouverture';
+$('#in-red-type').innerHTML = Object.entries(OUVERTURES).map(([k, o]) => `<option value="${k}">${o.label}</option>`).join('');
+function majRedQuoi(v) {
+  redQuoi = v;
+  $$('#red-quoi button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  $('#red-type-l').hidden = v !== 'ouverture';
+}
+$('#red-quoi').addEventListener('click', e => { const b = e.target.closest('button'); if (b) majRedQuoi(b.dataset.v); });
 function demanderRedressement(pts) {
   pointsRed = pts;
   $('#in-red-l').value = ''; $('#in-red-h').value = '';
-  $('#in-red-contour').checked = !face.contour.length;
+  majRedQuoi('ouverture');
   $('#dlg-redresser').showModal();
   $('#in-red-l').focus();
 }
@@ -263,17 +271,25 @@ $('#dlg-redresser').addEventListener('close', async () => {
     const { canvas, echelle, rect } = redresser(imgFace, pointsRed, L, H);
     const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.88));
     Object.assign(face, { photo: blob, imgW: canvas.width, imgH: canvas.height, redressee: true, echelle, ouvertures: [], accessoires: [], cotes: [], mesures: {}, contour: [] });
-    if ($('#in-red-contour').checked) {
+    if (redQuoi === 'contour') {
       face.contour = [{ x: rect.x, y: rect.y }, { x: rect.x + rect.w, y: rect.y }, { x: rect.x + rect.w, y: rect.y + rect.h }, { x: rect.x, y: rect.y + rect.h }];
       face.mesures = { 0: { val: L, src: 'manuel' }, 1: { val: H, src: 'manuel' }, 2: { val: L, src: 'manuel' }, 3: { val: H, src: 'manuel' } };
     } else {
-      face.cotes.push({ id: uid(), a: { x: rect.x, y: rect.y + rect.h + 0 }, b: { x: rect.x + rect.w, y: rect.y + rect.h }, val: L, src: 'manuel' });
-      face.cotes.push({ id: uid(), a: { x: rect.x, y: rect.y }, b: { x: rect.x, y: rect.y + rect.h }, val: H, src: 'manuel' });
+      const type = $('#in-red-type').value;
+      face.ouvertures.push({ id: uid(), type, x: rect.x, y: rect.y, w: rect.w, h: rect.h, L, H, srcL: 'manuel', srcH: 'manuel', prof: 20, appui: OUVERTURES[type].appui });
     }
     await enregistrer();
     await ouvrirFace(face);
-    setOutil(face.contour.length ? 'ouverture' : 'contour');
-    toast('Photo redressée et mise à l’échelle. Toutes les cotes sont maintenant calculées.');
+    if (redQuoi === 'contour') {
+      setOutil('ouverture');
+      toast('Façade mise à l’échelle : tracez les ouvertures, leurs cotes se calculent seules.', 6000);
+    } else if (cleAPI.get() && navigator.onLine) {
+      toast('Photo mise à l’échelle. Recherche de la façade et des autres ouvertures…', 6000);
+      $('#btn-detecter').click();
+    } else {
+      setOutil('contour');
+      aide('Photo mise à l’échelle. Touchez maintenant chaque angle de la façade (la pointe du pignon aussi), puis le premier point pour fermer.');
+    }
   } catch (e) { toast('Redressement impossible : ' + e.message); }
   finally { attente(); }
 });

@@ -88,7 +88,7 @@
   <div class="editeur">
     <nav class="outils" aria-label="Outils">
       <button data-outil="select" class="on"><span class="ico">✋</span>Choisir</button>
-      <button data-outil="redresser"><span class="ico">⬚</span>Redresser</button>
+      <button data-outil="redresser"><span class="ico">⬚</span>Étalonner</button>
       <button data-outil="contour"><span class="ico">⬠</span>Contour</button>
       <button data-outil="ouverture"><span class="ico">▭</span>Ouverture</button>
       <button data-outil="accessoire"><span class="ico">✚</span>Accessoire</button>
@@ -157,14 +157,18 @@
 
 <dialog id="dlg-redresser" class="dlg">
   <form method="dialog">
-    <h2>Dimensions du rectangle</h2>
-    <p class="note">Mesurez la largeur et la hauteur réelles du rectangle que vous venez de pointer (façade entière, fenêtre, porte…).</p>
-    <div class="ligne">
-      <label>Largeur (m)<input id="in-red-l" inputmode="decimal" autocomplete="off" required></label>
-      <label>Hauteur (m)<input id="in-red-h" inputmode="decimal" autocomplete="off" required></label>
+    <h2>Cotes de référence</h2>
+    <p class="note">Tapez la largeur et la hauteur réelles de ce que vous venez de pointer. Toute la façade sera calculée à partir de ces deux cotes.</p>
+    <div class="choix" id="red-quoi">
+      <button type="button" data-v="ouverture" class="on">Une ouverture</button>
+      <button type="button" data-v="contour">Toute la face</button>
     </div>
-    <label class="case"><input id="in-red-contour" type="checkbox" checked> Ce rectangle est le contour de la face</label>
-    <div class="dlg-actions"><button type="button" class="btn discret" data-fermer>Annuler</button><button value="ok" class="btn primaire">Redresser la photo</button></div>
+    <label id="red-type-l">Type d'ouverture<select id="in-red-type"></select></label>
+    <div class="ligne">
+      <label>Largeur (m)<input id="in-red-l" inputmode="decimal" autocomplete="off" required placeholder="ex. 1,20"></label>
+      <label>Hauteur (m)<input id="in-red-h" inputmode="decimal" autocomplete="off" required placeholder="ex. 1,35"></label>
+    </div>
+    <div class="dlg-actions"><button type="button" class="btn discret" data-fermer>Annuler</button><button value="ok" class="btn primaire">Calculer la façade</button></div>
   </form>
 </dialog>
 
