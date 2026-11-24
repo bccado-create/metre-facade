@@ -1,0 +1,17 @@
+{
+  "name": "Métré façade",
+  "short_name": "Métré",
+  "description": "Prise de cotes extérieures pour l'isolation par l'extérieur",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#24302a",
+  "theme_color": "#24302a",
+  "lang": "fr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

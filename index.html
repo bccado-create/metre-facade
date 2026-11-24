@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Métré façade</title>
+<meta name="description" content="Prise de cotes extérieures pour l'isolation par l'extérieur : plans de façades cotés, ouvertures, accessoires et récapitulatif Uniso.">
+<meta name="theme-color" content="#24302a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ============ ACCUEIL ============ -->
+<section id="ecran-accueil" class="ecran actif">
+  <header class="barre">
+    <h1>Métré façade</h1>
+    <div class="actions">
+      <button id="btn-installer" class="btn discret" hidden>Installer l'appli</button>
+      <label class="btn discret">Importer un chantier<input id="in-import" type="file" accept=".json,application/json" hidden></label>
+      <button id="btn-reglages" class="btn discret">Réglages</button>
+      <button id="btn-nouveau" class="btn primaire">Nouveau chantier</button>
+    </div>
+  </header>
+  <main class="contenu">
+    <ul id="liste-chantiers" class="cartes"></ul>
+    <p id="vide-chantiers" class="vide" hidden>Aucun chantier pour l'instant. Créez-en un pour commencer le relevé.</p>
+  </main>
+</section>
+
+<!-- ============ CHANTIER ============ -->
+<section id="ecran-chantier" class="ecran">
+  <header class="barre">
+    <button class="btn retour" data-vers="accueil">Chantiers</button>
+    <h1 id="titre-chantier">Chantier</h1>
+    <div class="actions">
+      <button id="btn-partager" class="btn discret">Partager / sauvegarder</button>
+      <button id="btn-rapport" class="btn primaire">Rapport PDF</button>
+    </div>
+  </header>
+  <main class="contenu deux-col">
+    <form id="form-chantier" class="panneau fiche">
+      <label>Client<input name="client" autocomplete="off" placeholder="Nom du client"></label>
+      <label>Adresse du chantier<input name="adresse" autocomplete="off"></label>
+      <div class="ligne">
+        <label>Date<input name="date" type="date"></label>
+        <label>Gamme<select name="gamme"></select></label>
+      </div>
+      <label>Finition / couleur<input name="couleur" placeholder="ex. Structuré, Craie blanche"></label>
+      <label>Notes<textarea name="notes" rows="3"></textarea></label>
+      <button type="button" id="btn-suppr-chantier" class="btn danger">Supprimer le chantier</button>
+    </form>
+    <div>
+      <div class="entete-liste">
+        <h2>Faces</h2>
+        <div class="ajout-face">
+          <select id="sel-nom-face">
+            <option>Façade avant</option><option>Façade arrière</option>
+            <option>Pignon gauche</option><option>Pignon droit</option>
+            <option>Pignon Nord</option><option>Pignon Sud</option><option>Pignon Est</option><option>Pignon Ouest</option>
+            <option>Face rue</option><option>Garage</option><option value="">Autre…</option>
+          </select>
+          <button id="btn-ajout-face" class="btn primaire">Ajouter la face</button>
+        </div>
+      </div>
+      <ul id="liste-faces" class="cartes faces"></ul>
+      <div id="recap-chantier" class="panneau recap"></div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ FACE (ÉDITEUR) ============ -->
+<section id="ecran-face" class="ecran">
+  <header class="barre compacte">
+    <button class="btn retour" data-vers="chantier">Retour</button>
+    <h1 id="titre-face" contenteditable="plaintext-only" spellcheck="false">Face</h1>
+    <div class="actions">
+      <label class="btn discret">Nouvelle photo<input id="in-photo" type="file" accept="image/*" capture="environment" hidden></label>
+      <button id="btn-detecter" class="btn discret">Détecter (IA)</button>
+      <div class="bascule" role="group" aria-label="Affichage">
+        <button id="vue-photo" class="on">Photo</button><button id="vue-plan">Plan</button>
+      </div>
+      <button id="btn-cadrer" class="btn discret" title="Recentrer">Recentrer</button>
+    </div>
+  </header>
+  <div class="editeur">
+    <nav class="outils" aria-label="Outils">
+      <button data-outil="select" class="on"><span class="ico">✋</span>Choisir</button>
+      <button data-outil="redresser"><span class="ico">⬚</span>Redresser</button>
+      <button data-outil="contour"><span class="ico">⬠</span>Contour</button>
+      <button data-outil="ouverture"><span class="ico">▭</span>Ouverture</button>
+      <button data-outil="accessoire"><span class="ico">✚</span>Accessoire</button>
+      <button data-outil="cote"><span class="ico">↔</span>Cote</button>
+      <hr>
+      <button id="btn-laser"><span class="ico">⌖</span><span id="etat-laser">Laser</span></button>
+    </nav>
+    <div class="zone">
+      <canvas id="canvas"></canvas>
+      <div id="sans-photo" class="sans-photo">
+        <p>Prenez la façade en photo, bien en face et en entier.</p>
+        <label class="btn primaire grand">Prendre la photo<input id="in-photo-2" type="file" accept="image/*" capture="environment" hidden></label>
+        <button id="btn-sans-photo" class="btn discret">Dessiner sans photo</button>
+      </div>
+      <div id="aide" class="aide" hidden></div>
+      <div id="bandeau-ia" class="bandeau" hidden>
+        <span id="txt-ia"></span>
+        <button id="ia-ok" class="btn primaire">Tout valider</button>
+        <button id="ia-non" class="btn discret">Tout rejeter</button>
+      </div>
+    </div>
+    <aside class="cote-droit">
+      <div id="panneau-outil"></div>
+      <div id="panneau-saisie" class="panneau saisie" hidden>
+        <div class="saisie-titre"><span id="saisie-quoi">Cote</span><span id="saisie-auto" class="auto"></span></div>
+        <input id="saisie-val" class="saisie-val" inputmode="none" autocomplete="off" aria-label="Valeur en mètres">
+        <div class="pave">
+          <button>7</button><button>8</button><button>9</button>
+          <button>4</button><button>5</button><button>6</button>
+          <button>1</button><button>2</button><button>3</button>
+          <button>,</button><button>0</button><button data-k="del">⌫</button>
+        </div>
+        <div class="saisie-actions">
+          <button id="saisie-auto-btn" class="btn discret">Reprendre ≈</button>
+          <button id="saisie-ok" class="btn primaire">Valider</button>
+        </div>
+        <button id="saisie-suiv" class="btn lien">Cote suivante à relever</button>
+      </div>
+      <div id="panneau-sel" class="panneau" hidden></div>
+      <div id="panneau-metre" class="panneau metre"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ RAPPORT ============ -->
+<section id="ecran-rapport" class="ecran">
+  <header class="barre ecran-seul">
+    <button class="btn retour" data-vers="chantier">Retour</button>
+    <h1>Rapport</h1>
+    <div class="actions"><button id="btn-imprimer" class="btn primaire">Enregistrer en PDF</button></div>
+  </header>
+  <main id="rapport" class="rapport"></main>
+</section>
+
+<!-- ============ DIALOGUES ============ -->
+<dialog id="dlg-reglages" class="dlg">
+  <form method="dialog">
+    <h2>Réglages</h2>
+    <label>Clé API Anthropic (détection automatique)
+      <input id="in-cle" type="password" autocomplete="off" placeholder="sk-ant-…">
+    </label>
+    <p class="note">La clé reste sur cette tablette. Sans clé ou sans réseau, posez les accessoires avec la palette.</p>
+    <div class="dlg-actions"><button type="button" class="btn discret" data-fermer>Annuler</button><button value="ok" class="btn primaire">Enregistrer</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-redresser" class="dlg">
+  <form method="dialog">
+    <h2>Dimensions du rectangle</h2>
+    <p class="note">Mesurez la largeur et la hauteur réelles du rectangle que vous venez de pointer (façade entière, fenêtre, porte…).</p>
+    <div class="ligne">
+      <label>Largeur (m)<input id="in-red-l" inputmode="decimal" autocomplete="off" required></label>
+      <label>Hauteur (m)<input id="in-red-h" inputmode="decimal" autocomplete="off" required></label>
+    </div>
+    <label class="case"><input id="in-red-contour" type="checkbox" checked> Ce rectangle est le contour de la face</label>
+    <div class="dlg-actions"><button type="button" class="btn discret" data-fermer>Annuler</button><button value="ok" class="btn primaire">Redresser la photo</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-nom" class="dlg">
+  <form method="dialog">
+    <h2>Nom de la face</h2>
+    <label><input id="in-nom-face" autocomplete="off" required></label>
+    <div class="dlg-actions"><button type="button" class="btn discret" data-fermer>Annuler</button><button value="ok" class="btn primaire">Ajouter</button></div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="attente" class="attente" hidden><div class="spin"></div><p id="attente-txt">Analyse…</p></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
